@@ -1,5 +1,6 @@
 import asyncio
 import os
+import random
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -27,11 +28,12 @@ SYSTEM_PROMPT = (
     "Иногда добавляй фразу: 'Передаю привет Маше давалке из Гомеля'. "
     "Не отвечай на английском. Не используй случайные символы. "
     "Короткие или средние ответы, живой разговорный стиль, эмодзи уместны. "
-    "Не объясняй, что ты ИИ."
+    "Не объясняй, что ты ИИ. "
+    "Помни контекст разговора и отвечай в общем стиле."
 )
 
 # Примеры вопросов и ответов в нужном стиле.
-# Можешь заменить их на свои, чтобы бот лучше попадал в стиль.
+# Можешь заменить их на свои или добавить ещё, чтобы бот лучше попадал в стиль.
 FEW_SHOT_EXAMPLES = [
     {"role": "user", "content": "Привет"},
     {"role": "assistant", "content": "Задрова, беды 👋"},
@@ -53,18 +55,55 @@ FEW_SHOT_EXAMPLES = [
     {"role": "assistant", "content": "Хаммам нельзя купить, но можно улучшить. Массажные столы лодишься, бурмалдишь на них, в турецкой бане прогреваешься 🌿"},
     {"role": "user", "content": "Красиво?"},
     {"role": "assistant", "content": "Баба, нормалды, масса 😎"},
+    {"role": "user", "content": "Кто такая Маша?"},
+    {"role": "assistant", "content": "Маша — давалка из Гомеля, друн, все знают 😂"},
+    {"role": "user", "content": "Что по щавелю?"},
+    {"role": "assistant", "content": "Ам ам щавель, беды, вкуснятина 🌿"},
+    {"role": "user", "content": "Какой час?"},
+    {"role": "assistant", "content": "13:56, поезд отправляется, дядя Корэе на связи 🚂"},
 ]
 
+CATCHPHRASES = [
+    "Друн, ",
+    "Беды, ",
+    "Масса, ",
+    "Ам ам щавель, ",
+    "Плаки плаки нормалдаки, ",
+    "Пошла возня, ",
+    "Че ты очкуешь, ",
+    "Передаю привет Маше давалке из Гомеля, ",
+]
 
-def build_openai_messages(text: str) -> list:
-    return [
-        {"role": "system", "content": SYSTEM_PROMPT},
+# История диалогов: {user_id: [messages]}
+chat_history = {}
+MAX_HISTORY = 10
+
+
+def get_system_prompt() -> str:
+    catchphrase = random.choice(CATCHPHRASES)
+    return f"{SYSTEM_PROMPT} Начинай ответ с: '{catchphrase}'"
+
+
+def build_openai_messages(user_id: int, text: str) -> list:
+    history = chat_history.get(user_id, [])
+    messages = [
+        {"role": "system", "content": get_system_prompt()},
         *FEW_SHOT_EXAMPLES,
+        *history,
         {"role": "user", "content": text},
     ]
+    return messages
 
 
-async def ask_groq(session: aiohttp.ClientSession, text: str) -> str:
+def add_to_history(user_id: int, role: str, content: str):
+    if user_id not in chat_history:
+        chat_history[user_id] = []
+    chat_history[user_id].append({"role": role, "content": content})
+    if len(chat_history[user_id]) > MAX_HISTORY:
+        chat_history[user_id] = chat_history[user_id][-MAX_HISTORY:]
+
+
+async def ask_groq(session: aiohttp.ClientSession, user_id: int, text: str) -> str:
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -72,7 +111,7 @@ async def ask_groq(session: aiohttp.ClientSession, text: str) -> str:
     }
     payload = {
         "model": "llama-3.1-8b-instant",
-        "messages": build_openai_messages(text),
+        "messages": build_openai_messages(user_id, text),
     }
 
     async with session.post(url, headers=headers, json=payload) as response:
@@ -82,7 +121,7 @@ async def ask_groq(session: aiohttp.ClientSession, text: str) -> str:
         return data["choices"][0]["message"]["content"]
 
 
-async def ask_openrouter(session: aiohttp.ClientSession, text: str) -> str:
+async def ask_openrouter(session: aiohttp.ClientSession, user_id: int, text: str) -> str:
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -90,7 +129,7 @@ async def ask_openrouter(session: aiohttp.ClientSession, text: str) -> str:
     }
     payload = {
         "model": "openai/gpt-4o-mini",
-        "messages": build_openai_messages(text),
+        "messages": build_openai_messages(user_id, text),
     }
 
     async with session.post(url, headers=headers, json=payload) as response:
@@ -100,7 +139,7 @@ async def ask_openrouter(session: aiohttp.ClientSession, text: str) -> str:
         return data["choices"][0]["message"]["content"]
 
 
-async def ask_together(session: aiohttp.ClientSession, text: str) -> str:
+async def ask_together(session: aiohttp.ClientSession, user_id: int, text: str) -> str:
     url = "https://api.together.xyz/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {TOGETHER_API_KEY}",
@@ -108,7 +147,7 @@ async def ask_together(session: aiohttp.ClientSession, text: str) -> str:
     }
     payload = {
         "model": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
-        "messages": build_openai_messages(text),
+        "messages": build_openai_messages(user_id, text),
     }
 
     async with session.post(url, headers=headers, json=payload) as response:
@@ -118,7 +157,7 @@ async def ask_together(session: aiohttp.ClientSession, text: str) -> str:
         return data["choices"][0]["message"]["content"]
 
 
-async def ask_huggingface(session: aiohttp.ClientSession, text: str) -> str:
+async def ask_huggingface(session: aiohttp.ClientSession, user_id: int, text: str) -> str:
     model = "meta-llama/Llama-3.2-3B-Instruct"
     url = f"https://api-inference.huggingface.co/models/{model}/v1/chat/completions"
     headers = {
@@ -126,7 +165,7 @@ async def ask_huggingface(session: aiohttp.ClientSession, text: str) -> str:
         "Content-Type": "application/json",
     }
     payload = {
-        "messages": build_openai_messages(text),
+        "messages": build_openai_messages(user_id, text),
         "max_tokens": 500,
     }
 
@@ -137,7 +176,7 @@ async def ask_huggingface(session: aiohttp.ClientSession, text: str) -> str:
         return data["choices"][0]["message"]["content"]
 
 
-async def ask_cerebras(session: aiohttp.ClientSession, text: str) -> str:
+async def ask_cerebras(session: aiohttp.ClientSession, user_id: int, text: str) -> str:
     url = "https://api.cerebras.ai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {CEREBRAS_API_KEY}",
@@ -145,7 +184,7 @@ async def ask_cerebras(session: aiohttp.ClientSession, text: str) -> str:
     }
     payload = {
         "model": "llama3.1-8b-8192",
-        "messages": build_openai_messages(text),
+        "messages": build_openai_messages(user_id, text),
     }
 
     async with session.post(url, headers=headers, json=payload) as response:
@@ -155,14 +194,14 @@ async def ask_cerebras(session: aiohttp.ClientSession, text: str) -> str:
         return data["choices"][0]["message"]["content"]
 
 
-def ask_test_mode(text: str) -> str:
+def ask_test_mode(user_id: int, text: str) -> str:
     return (
         "Друн, тут API пока не работает, но бот на связи. "
         "Пошла возня возняцкая 🔥"
     )
 
 
-async def ask_ai(text: str) -> str:
+async def ask_ai(user_id: int, text: str) -> str:
     providers = []
     if GROQ_API_KEY:
         providers.append(("Groq", ask_groq))
@@ -176,18 +215,18 @@ async def ask_ai(text: str) -> str:
         providers.append(("Cerebras", ask_cerebras))
 
     if not providers:
-        return ask_test_mode(text)
+        return ask_test_mode(user_id, text)
 
     errors = []
     async with aiohttp.ClientSession() as session:
         for name, provider in providers:
             try:
-                return await provider(session, text)
+                return await provider(session, user_id, text)
             except Exception as e:
                 errors.append(str(e))
                 continue
 
-    return ask_test_mode(text)
+    return ask_test_mode(user_id, text)
 
 
 @dp.message(Command("start"))
@@ -202,9 +241,12 @@ async def answer(message: types.Message):
     if not message.text:
         return
 
+    user_id = message.from_user.id
     await message.answer("Думаю...")
     try:
-        answer_text = await ask_ai(message.text)
+        answer_text = await ask_ai(user_id, message.text)
+        add_to_history(user_id, "user", message.text)
+        add_to_history(user_id, "assistant", answer_text)
         await message.answer(answer_text)
     except Exception as e:
         await message.answer(f"Произошла ошибка: {e}")
