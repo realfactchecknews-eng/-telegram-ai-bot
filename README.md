@@ -1,6 +1,6 @@
 # Telegram AI Bot
 
-Простой бот в Telegram, который отвечает на вопросы через ИИ. Поддерживает несколько API: Groq, Gemini, OpenRouter. Если один не работает, бот пробует следующий.
+Простой бот в Telegram, который отвечает на вопросы через ИИ. Поддерживает несколько API: Groq, OpenRouter, Together, HuggingFace, Cerebras. Если один не работает, бот пробует следующий.
 
 ## Что нужно
 
@@ -8,7 +8,6 @@
 2. Токен бота от [@BotFather](https://t.me/BotFather)
 3. Хотя бы один API ключ:
    - [Groq](https://console.groq.com/keys) — бесплатный тариф
-   - [Google AI Studio](https://aistudio.google.com/app/apikey) — бесплатный тариф
    - [Hugging Face](https://huggingface.co/settings/tokens) — бесплатный Inference API
    - [Cerebras](https://cloud.cerebras.ai/) — бесплатный тариф
    - [Together AI](https://api.together.xyz/) — $5 кредитов на старте
@@ -35,7 +34,6 @@ cp .env.example .env
 ```
 BOT_TOKEN=твой_токен_от_BotFather
 GROQ_API_KEY=твой_ключ_от_Groq
-GEMINI_API_KEY=твой_ключ_от_Google_AI_Studio
 OPENROUTER_API_KEY=твой_ключ_от_OpenRouter
 TOGETHER_API_KEY=твой_ключ_от_Together_AI
 HUGGINGFACE_API_KEY=твой_ключ_от_HuggingFace
@@ -65,13 +63,6 @@ python3 bot.py
 2. Зарегистрируйся
 3. Перейди в **API Keys**
 4. Создай ключ и скопируй
-
-### Gemini API key
-
-1. Зайди на [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-2. Войди через Google
-3. Нажми **Create API key**
-4. Скопируй ключ
 
 ### Hugging Face API key
 

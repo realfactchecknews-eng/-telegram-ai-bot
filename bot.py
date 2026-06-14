@@ -9,7 +9,6 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
@@ -81,24 +80,6 @@ async def ask_groq(session: aiohttp.ClientSession, text: str) -> str:
         if response.status != 200:
             raise RuntimeError(f"Groq: {data}")
         return data["choices"][0]["message"]["content"]
-
-
-async def ask_gemini(session: aiohttp.ClientSession, text: str) -> str:
-    model = "gemini-2.0-flash"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-    headers = {"Content-Type": "application/json"}
-    contents = [{"role": "user", "parts": [{"text": SYSTEM_PROMPT}]}]
-    for msg in FEW_SHOT_EXAMPLES:
-        role = "model" if msg["role"] == "assistant" else "user"
-        contents.append({"role": role, "parts": [{"text": msg["content"]}]})
-    contents.append({"role": "user", "parts": [{"text": text}]})
-    payload = {"contents": contents}
-
-    async with session.post(url, headers=headers, json=payload) as response:
-        data = await response.json()
-        if response.status != 200:
-            raise RuntimeError(f"Gemini: {data}")
-        return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
 async def ask_openrouter(session: aiohttp.ClientSession, text: str) -> str:
@@ -185,8 +166,6 @@ async def ask_ai(text: str) -> str:
     providers = []
     if GROQ_API_KEY:
         providers.append(("Groq", ask_groq))
-    if GEMINI_API_KEY:
-        providers.append(("Gemini", ask_gemini))
     if OPENROUTER_API_KEY:
         providers.append(("OpenRouter", ask_openrouter))
     if TOGETHER_API_KEY:
