@@ -242,7 +242,7 @@ async def answer(message: types.Message):
         return
 
     user_id = message.from_user.id
-    await message.answer("Думаю...")
+    await bot.send_chat_action(message.chat.id, "typing")
     try:
         answer_text = await ask_ai(user_id, message.text)
         add_to_history(user_id, "user", message.text)
