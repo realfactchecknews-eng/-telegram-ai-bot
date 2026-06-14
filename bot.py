@@ -163,7 +163,7 @@ async def ask_cerebras(session: aiohttp.ClientSession, text: str) -> str:
         "Content-Type": "application/json",
     }
     payload = {
-        "model": "llama3.1-8b",
+        "model": "llama3.1-8b-8192",
         "messages": build_openai_messages(text),
     }
 
@@ -172,6 +172,13 @@ async def ask_cerebras(session: aiohttp.ClientSession, text: str) -> str:
         if response.status != 200:
             raise RuntimeError(f"Cerebras: {data}")
         return data["choices"][0]["message"]["content"]
+
+
+def ask_test_mode(text: str) -> str:
+    return (
+        "Друн, тут API пока не работает, но бот на связи. "
+        "Пошла возня возняцкая 🔥"
+    )
 
 
 async def ask_ai(text: str) -> str:
@@ -190,11 +197,7 @@ async def ask_ai(text: str) -> str:
         providers.append(("Cerebras", ask_cerebras))
 
     if not providers:
-        raise RuntimeError(
-            "Нет настроенных API. Добавь хотя бы один ключ в .env: "
-            "GROQ_API_KEY, GEMINI_API_KEY, OPENROUTER_API_KEY, TOGETHER_API_KEY, "
-            "HUGGINGFACE_API_KEY или CEREBRAS_API_KEY"
-        )
+        return ask_test_mode(text)
 
     errors = []
     async with aiohttp.ClientSession() as session:
@@ -205,7 +208,7 @@ async def ask_ai(text: str) -> str:
                 errors.append(str(e))
                 continue
 
-    return f"Все API недоступны:\n" + "\n".join(errors)
+    return ask_test_mode(text)
 
 
 @dp.message(Command("start"))
