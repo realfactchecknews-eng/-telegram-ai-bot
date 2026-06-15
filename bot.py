@@ -400,10 +400,15 @@ async def start_cmd(message: types.Message):
 
 @dp.message()
 async def answer(message: types.Message):
+    user_id = message.from_user.id
+
+    if message.photo or message.document or message.sticker or message.video:
+        await message.answer("Друн, я картинки не вижу, пиши текстом, беды 🙈")
+        return
+
     if not message.text:
         return
 
-    user_id = message.from_user.id
     await bot.send_chat_action(message.chat.id, "typing")
     try:
         answer_text = await ask_ai(user_id, message.text)
@@ -411,7 +416,8 @@ async def answer(message: types.Message):
         add_to_history(user_id, "assistant", answer_text)
         await message.answer(answer_text)
     except Exception as e:
-        await message.answer(f"Произошла ошибка: {e}")
+        print(f"Ошибка при ответе: {e}")
+        await message.answer("Друн, тут что-то пошло не так, но бот на связи. Пошла возня возняцкая 🔥")
 
 
 async def main():
