@@ -35,12 +35,22 @@ cp .env.example .env
 BOT_TOKEN=твой_токен_от_BotFather
 GROQ_API_KEY=твой_ключ_от_Groq
 OPENROUTER_API_KEY=твой_ключ_от_OpenRouter
+OPENROUTER_MODEL=openai/gpt-4o-mini
 TOGETHER_API_KEY=твой_ключ_от_Together_AI
 HUGGINGFACE_API_KEY=твой_ключ_от_HuggingFace
 CEREBRAS_API_KEY=твой_ключ_от_Cerebras
 ```
 
 Можно добавить один ключ или сразу несколько. Бот попробует их по очереди. Если все API недоступны, бот переключается в тестовый режим и отвечает в том же стиле.
+
+### OpenRouter модель
+
+По умолчанию используется `openai/gpt-4o-mini` — дешёвая и качественная модель. Можно поменять через `OPENROUTER_MODEL`:
+
+- `openai/gpt-4o-mini` — дешевая, хорошее качество
+- `google/gemini-flash-1.5` — очень дешевая
+- `meta-llama/llama-3.1-8b-instruct` — самая дешевая
+- `anthropic/claude-3-haiku` — качественная, недорогая
 
 ### 3. Запусти бота
 

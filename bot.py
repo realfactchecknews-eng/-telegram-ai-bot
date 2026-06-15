@@ -11,6 +11,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY")
@@ -128,7 +129,7 @@ async def ask_openrouter(session: aiohttp.ClientSession, user_id: int, text: str
         "Content-Type": "application/json",
     }
     payload = {
-        "model": "openai/gpt-4o-mini",
+        "model": OPENROUTER_MODEL,
         "messages": build_openai_messages(user_id, text),
     }
 

@@ -42,6 +42,7 @@ open .env
 - `CEREBRAS_API_KEY` — бесплатный.
 - `TOGETHER_API_KEY` — $5 кредитов на старте.
 - `OPENROUTER_API_KEY` — платный, но дёшево.
+- `OPENROUTER_MODEL` — модель для OpenRouter (по умолчанию `openai/gpt-4o-mini`).
 
 Чтобы отключить API, поставь `#` в начале строки:
 
