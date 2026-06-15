@@ -224,12 +224,12 @@ def ask_test_mode(user_id: int, text: str) -> str:
 
 async def ask_ai(user_id: int, text: str) -> str:
     providers = []
-    if GROQ_API_KEY:
-        providers.append(("Groq", ask_groq))
     if OPENROUTER_API_KEY:
         providers.append(("OpenRouter", ask_openrouter))
     if DEEPSEEK_API_KEY:
         providers.append(("DeepSeek", ask_deepseek))
+    if GROQ_API_KEY:
+        providers.append(("Groq", ask_groq))
     if TOGETHER_API_KEY:
         providers.append(("Together", ask_together))
     if HUGGINGFACE_API_KEY:
