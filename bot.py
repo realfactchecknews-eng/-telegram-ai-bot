@@ -293,15 +293,33 @@ def get_dynamic_phrases_hint(user_text: str) -> str:
     return ""
 
 
-def build_messages(user_id: int, text: str, include_prefill: bool = True) -> list:
+def build_messages(user_id: int, text: str, include_prefill: bool = True, use_cache: bool = False) -> list:
     history = chat_history.get(user_id, [])
+    phrases_hint = get_dynamic_phrases_hint(text)
     messages = [
         {"role": "system", "content": FIXED_SYSTEM_PROMPT},
     ]
-    phrases_hint = get_dynamic_phrases_hint(text)
+
+    if use_cache and FEW_SHOT_EXAMPLES:
+        # Cache the fixed system prompt + few-shot examples together.
+        # The cache point is placed on the last assistant example.
+        for i, msg in enumerate(FEW_SHOT_EXAMPLES):
+            if i == len(FEW_SHOT_EXAMPLES) - 1 and msg["role"] == "assistant":
+                messages.append({
+                    "role": msg["role"],
+                    "content": [
+                        {"type": "text", "text": msg["content"], "cache_control": {"type": "ephemeral"}}
+                    ],
+                })
+            else:
+                messages.append(msg)
+    else:
+        messages.extend(FEW_SHOT_EXAMPLES)
+
+    # Dynamic hint is placed after the cached prefix so it does not invalidate the cache.
     if phrases_hint:
         messages.append({"role": "system", "content": phrases_hint})
-    messages.extend(FEW_SHOT_EXAMPLES)
+
     messages.extend(history)
     messages.append({"role": "user", "content": text})
     if include_prefill:
@@ -416,7 +434,7 @@ async def ask_openrouter(session: aiohttp.ClientSession, user_id: int, text: str
     }
     payload = {
         "model": OPENROUTER_MODEL,
-        "messages": build_messages(user_id, text),
+        "messages": build_messages(user_id, text, use_cache=True),
         "temperature": 0.6,
     }
     return await call_with_retry(session, url, headers, payload, "OpenRouter")
