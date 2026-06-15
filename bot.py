@@ -12,6 +12,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY")
@@ -140,6 +142,24 @@ async def ask_openrouter(session: aiohttp.ClientSession, user_id: int, text: str
         return data["choices"][0]["message"]["content"]
 
 
+async def ask_deepseek(session: aiohttp.ClientSession, user_id: int, text: str) -> str:
+    url = "https://api.deepseek.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": DEEPSEEK_MODEL,
+        "messages": build_openai_messages(user_id, text),
+    }
+
+    async with session.post(url, headers=headers, json=payload) as response:
+        data = await response.json()
+        if response.status != 200:
+            raise RuntimeError(f"DeepSeek: {data}")
+        return data["choices"][0]["message"]["content"]
+
+
 async def ask_together(session: aiohttp.ClientSession, user_id: int, text: str) -> str:
     url = "https://api.together.xyz/v1/chat/completions"
     headers = {
@@ -208,6 +228,8 @@ async def ask_ai(user_id: int, text: str) -> str:
         providers.append(("Groq", ask_groq))
     if OPENROUTER_API_KEY:
         providers.append(("OpenRouter", ask_openrouter))
+    if DEEPSEEK_API_KEY:
+        providers.append(("DeepSeek", ask_deepseek))
     if TOGETHER_API_KEY:
         providers.append(("Together", ask_together))
     if HUGGINGFACE_API_KEY:

@@ -10,6 +10,7 @@
    - [Groq](https://console.groq.com/keys) — бесплатный тариф
    - [Hugging Face](https://huggingface.co/settings/tokens) — бесплатный Inference API
    - [Cerebras](https://cloud.cerebras.ai/) — бесплатный тариф
+   - [DeepSeek](https://platform.deepseek.com/) — очень дёшево, хорошее качество
    - [Together AI](https://api.together.xyz/) — $5 кредитов на старте
    - [OpenRouter](https://openrouter.ai/) — платный, но дёшевый
 
@@ -36,6 +37,8 @@ BOT_TOKEN=твой_токен_от_BotFather
 GROQ_API_KEY=твой_ключ_от_Groq
 OPENROUTER_API_KEY=твой_ключ_от_OpenRouter
 OPENROUTER_MODEL=openai/gpt-4o-mini
+DEEPSEEK_API_KEY=твой_ключ_от_DeepSeek
+DEEPSEEK_MODEL=deepseek-chat
 TOGETHER_API_KEY=твой_ключ_от_Together_AI
 HUGGINGFACE_API_KEY=твой_ключ_от_HuggingFace
 CEREBRAS_API_KEY=твой_ключ_от_Cerebras
@@ -51,6 +54,9 @@ CEREBRAS_API_KEY=твой_ключ_от_Cerebras
 - `google/gemini-flash-1.5` — очень дешевая
 - `meta-llama/llama-3.1-8b-instruct` — самая дешевая
 - `anthropic/claude-3-haiku` — качественная, недорогая
+- `deepseek/deepseek-chat` — очень дешевая и качественная
+
+Если хочешь использовать DeepSeek напрямую (без OpenRouter), добавь `DEEPSEEK_API_KEY` и `DEEPSEEK_MODEL`.
 
 ### 3. Запусти бота
 
@@ -104,6 +110,13 @@ python3 bot.py
 3. Перейди в **Keys**
 4. Создай ключ и скопируй
 5. Пополни баланс (нужна зарубежная карта или крипта)
+
+### DeepSeek API key
+
+1. Зайди на [platform.deepseek.com](https://platform.deepseek.com/)
+2. Зарегистрируйся
+3. Создай API ключ в настройках
+4. Скопируй ключ
 
 ## Кастомизация
 

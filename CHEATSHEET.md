@@ -43,6 +43,8 @@ open .env
 - `TOGETHER_API_KEY` — $5 кредитов на старте.
 - `OPENROUTER_API_KEY` — платный, но дёшево.
 - `OPENROUTER_MODEL` — модель для OpenRouter (по умолчанию `openai/gpt-4o-mini`).
+- `DEEPSEEK_API_KEY` — ключ от DeepSeek (очень дёшево).
+- `DEEPSEEK_MODEL` — модель DeepSeek (по умолчанию `deepseek-chat`).
 
 Чтобы отключить API, поставь `#` в начале строки:
 
