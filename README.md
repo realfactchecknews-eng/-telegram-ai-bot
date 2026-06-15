@@ -36,7 +36,7 @@ cp .env.example .env
 BOT_TOKEN=твой_токен_от_BotFather
 GROQ_API_KEY=твой_ключ_от_Groq
 OPENROUTER_API_KEY=твой_ключ_от_OpenRouter
-OPENROUTER_MODEL=openai/gpt-4o-mini
+OPENROUTER_MODEL=deepseek/deepseek-chat
 DEEPSEEK_API_KEY=твой_ключ_от_DeepSeek
 DEEPSEEK_MODEL=deepseek-chat
 TOGETHER_API_KEY=твой_ключ_от_Together_AI
@@ -48,13 +48,13 @@ CEREBRAS_API_KEY=твой_ключ_от_Cerebras
 
 ### OpenRouter модель
 
-По умолчанию используется `openai/gpt-4o-mini` — дешёвая и качественная модель. Можно поменять через `OPENROUTER_MODEL`:
+По умолчанию используется `deepseek/deepseek-chat` — очень дешевая и качественная модель. Можно поменять через `OPENROUTER_MODEL`:
 
+- `deepseek/deepseek-chat` — дешевая, хорошее качество (по умолчанию)
 - `openai/gpt-4o-mini` — дешевая, хорошее качество
 - `google/gemini-flash-1.5` — очень дешевая
 - `meta-llama/llama-3.1-8b-instruct` — самая дешевая
 - `anthropic/claude-3-haiku` — качественная, недорогая
-- `deepseek/deepseek-chat` — очень дешевая и качественная
 
 Если хочешь использовать DeepSeek напрямую (без OpenRouter), добавь `DEEPSEEK_API_KEY` и `DEEPSEEK_MODEL`.
 
