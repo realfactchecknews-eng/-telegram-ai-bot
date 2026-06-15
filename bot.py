@@ -302,6 +302,33 @@ def add_to_history(user_id: int, role: str, content: str):
         chat_history[user_id] = chat_history[user_id][-MAX_HISTORY:]
 
 
+def remove_emojis(text: str) -> str:
+    import re
+    # Удаляем эмодзи и символы из диапазонов Unicode
+    emoji_pattern = re.compile(
+        "["
+        "\U0001F600-\U0001F64F"  # смайлики
+        "\U0001F300-\U0001F5FF"  # символы и пиктограммы
+        "\U0001F680-\U0001F6FF"  # транспорт
+        "\U0001F1E0-\U0001F1FF"  # флаги
+        "\U00002702-\U000027B0"
+        "\U000024C2-\U0001F251"
+        "\U0001f926-\U0001f937"
+        "\U00010000-\U0010ffff"
+        "\u2640-\u2642"
+        "\u2600-\u2B55"
+        "\u200d"
+        "\u23cf"
+        "\u23e9"
+        "\u231a"
+        "\ufe0f"
+        "\u3030"
+        "]+",
+        flags=re.UNICODE,
+    )
+    return emoji_pattern.sub(r"", text).strip()
+
+
 async def ask_groq(session: aiohttp.ClientSession, user_id: int, text: str) -> str:
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
@@ -474,6 +501,7 @@ async def answer(message: types.Message):
     await bot.send_chat_action(message.chat.id, "typing")
     try:
         answer_text = await ask_ai(user_id, message.text)
+        answer_text = remove_emojis(answer_text)
         add_to_history(user_id, "user", message.text)
         add_to_history(user_id, "assistant", answer_text)
         await message.answer(answer_text)
