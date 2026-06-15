@@ -80,22 +80,72 @@ CATCHPHRASES = [
     "Передаю привет Маше давалке из Гомеля, ",
 ]
 
+# Библиотека фраз по темам. Заполни реальными фразами Мелстроя.
+# Ключевые слова — темы, которые бот ищет в сообщении пользователя.
+# Значения — список фраз, которые уместны по смыслу.
+PHRASES_BY_TOPIC = {
+    "привет": ["Задрова, беды", "Привет, масса", "Здарова, старый"],
+    "пока": ["Беды, я пошёл", "Удачи, друн"],
+    "дела": ["Старый, я нормалды, это Патрик", "Всё плаки плаки нормалдаки"],
+    "деньги": ["Закинь мне там 5 миллионов баксов", "Сам найди"],
+    "хаммам": ["Хаммам нельзя купить, но можно улучшить", "Массажные столы лодишься, бурмалдишь на них"],
+    "щавель": ["Ам ам щавель", "Щавель, беды"],
+    "время": ["13:56, поезд отправляется", "Дядя Корэе на связи"],
+    "страх": ["Че ты очкуешь, друн", "Может будет шанс"],
+    "маша": ["Передаю привет Маше давалке из Гомеля"],
+    "красота": ["Баба, нормалды, масса"],
+}
+
 # История диалогов: {user_id: [messages]}
 chat_history = {}
 MAX_HISTORY = 10
 
 
-def get_system_prompt() -> str:
-    if random.random() < 0.3:
-        catchphrase = random.choice(CATCHPHRASES)
-        return f"{SYSTEM_PROMPT} Можешь начать ответ с фразы: '{catchphrase}'"
+def detect_topics(text: str) -> list:
+    text_lower = text.lower()
+    matched = []
+    for topic, keywords in [
+        ("привет", ["привет", "здарова", "хай", "йо", "hello"]),
+        ("пока", ["пока", "до свидания", "бай", "bye"]),
+        ("дела", ["дела", "как ты", "как жизнь", "что нового"]),
+        ("деньги", ["деньги", "баксы", "миллион", "бабки", "кэш"]),
+        ("хаммам", ["хаммам", "баня", "турецкая", "массаж"]),
+        ("щавель", ["щавель", "есть", "кушать", "жрать"]),
+        ("время", ["время", "час", "который час", "сколько времени"]),
+        ("страх", ["боюсь", "страшно", "очкуешь", "боязно", "не могу"]),
+        ("маша", ["маша", "маше", "давала"]),
+        ("красота", ["красиво", "красота", "симпатично", "огонь"]),
+    ]:
+        if any(kw in text_lower for kw in keywords):
+            matched.append(topic)
+    return matched
+
+
+def get_context_phrases(text: str) -> list:
+    topics = detect_topics(text)
+    if not topics:
+        return []
+    phrases = []
+    for topic in topics:
+        phrases.extend(PHRASES_BY_TOPIC.get(topic, []))
+    return phrases[:3]
+
+
+def get_system_prompt(user_text: str) -> str:
+    relevant = get_context_phrases(user_text)
+    if not relevant:
+        if random.random() < 0.3:
+            relevant = [random.choice(CATCHPHRASES).strip()]
+    if relevant:
+        phrases_hint = " | ".join(relevant)
+        return f"{SYSTEM_PROMPT} Если уместно, можешь использовать одну из этих фраз: {phrases_hint}. Не спами, используй естественно."
     return SYSTEM_PROMPT
 
 
 def build_openai_messages(user_id: int, text: str) -> list:
     history = chat_history.get(user_id, [])
     messages = [
-        {"role": "system", "content": get_system_prompt()},
+        {"role": "system", "content": get_system_prompt(text)},
         *FEW_SHOT_EXAMPLES,
         *history,
         {"role": "user", "content": text},
