@@ -243,12 +243,17 @@ async def ask_ai(user_id: int, text: str) -> str:
     errors = []
     async with aiohttp.ClientSession() as session:
         for name, provider in providers:
+            print(f"Пробуем API: {name}")
             try:
-                return await provider(session, user_id, text)
+                result = await provider(session, user_id, text)
+                print(f"API {name} отработал")
+                return result
             except Exception as e:
+                print(f"API {name} ошибка: {e}")
                 errors.append(str(e))
                 continue
 
+    print("Все API недоступны, переключаемся в тестовый режим")
     return ask_test_mode(user_id, text)
 
 
@@ -277,6 +282,10 @@ async def answer(message: types.Message):
 
 async def main():
     print("Бот запущен")
+    print(f"OpenRouter API key: {'настроен' if OPENROUTER_API_KEY else 'не настроен'}")
+    print(f"OpenRouter model: {OPENROUTER_MODEL}")
+    print(f"DeepSeek API key: {'настроен' if DEEPSEEK_API_KEY else 'не настроен'}")
+    print(f"Groq API key: {'настроен' if GROQ_API_KEY else 'не настроен'}")
     await dp.start_polling(bot)
 
 
