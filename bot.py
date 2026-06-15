@@ -1,6 +1,7 @@
 import asyncio
 import os
 import random
+from collections import deque
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -50,7 +51,7 @@ SYSTEM_PROMPT = (
     "- Короткие или средние фразы, как будто сказал вслух.\n"
     "- Можешь делать паузы через многоточие, восклицательные знаки, троеточие.\n"
     "- Используешь слова: беды, друн, масса, нормалды, щавель, ам ам, плаки плаки, пошла возня.\n"
-    "- Иногда бросаешь мемные фразы: 'Передаю привет Маше давалке из Гомеля', 'Че ты очкуешь, друн', '13:56, поезд отправляется', 'Друн, все плаки плаки нормалдаки', 'Пошла возня', 'Ам ам щавель'.\n"
+    "- Иногда бросаешь мемные фразы из своего сленга, но не в каждом сообщении. Чередуй фразы и не повторяй одну и ту же два раза подряд.\n"
     "- Можешь быть ироничным, самоуверенным, шутливым.\n"
     "- Не используй смайлики. Никаких эмодзи.\n"
     "- Не объясняй, что ты ИИ. Не говоришь 'как искусственный интеллект'.\n"
@@ -221,6 +222,10 @@ PHRASES_BY_TOPIC = {
 chat_history = {}
 MAX_HISTORY = 10
 
+# Недавно использованные фразы, чтобы не повторять их подряд
+recent_phrases = {}
+MAX_RECENT_PHRASES = 5
+
 
 def detect_topics(text: str) -> list:
     text_lower = text.lower()
@@ -283,19 +288,35 @@ FIXED_SYSTEM_PROMPT = (
 )
 
 
-def get_dynamic_phrases_hint(user_text: str) -> str:
+def get_dynamic_phrases_hint(user_text: str, recent_phrases: list = None) -> str:
     relevant = get_context_phrases(user_text)
     if not relevant:
-        if random.random() < 0.3:
+        if random.random() < 0.2:
             relevant = [random.choice(CATCHPHRASES).strip()]
-    if relevant:
-        return "Если уместно, можешь естественно вставить одну из фраз: " + " | ".join(relevant[:3])
-    return ""
+    if not relevant:
+        return ""
+    if recent_phrases:
+        relevant = [p for p in relevant if p not in recent_phrases]
+    if not relevant:
+        relevant = [random.choice(CATCHPHRASES).strip()]
+    return "Если ответ прямо по теме, можешь иногда естественно использовать одну из фраз: " + " | ".join(relevant[:3]) + ". Не вставляй фразу, если она не подходит по смыслу. Не повторяйся."
+
+
+def update_recent_phrases(user_id: int, response: str):
+    all_phrases = list(CATCHPHRASES) + [p for phrases in PHRASES_BY_TOPIC.values() for p in phrases]
+    used = [p for p in all_phrases if p in response]
+    if not used:
+        return
+    if user_id not in recent_phrases:
+        recent_phrases[user_id] = deque(maxlen=MAX_RECENT_PHRASES)
+    for p in used:
+        recent_phrases[user_id].append(p)
 
 
 def build_messages(user_id: int, text: str, include_prefill: bool = True, use_cache: bool = False) -> list:
     history = chat_history.get(user_id, [])
-    phrases_hint = get_dynamic_phrases_hint(text)
+    recent = list(recent_phrases.get(user_id, []))
+    phrases_hint = get_dynamic_phrases_hint(text, recent)
     messages = [
         {"role": "system", "content": FIXED_SYSTEM_PROMPT},
     ]
@@ -562,6 +583,7 @@ async def answer(message: types.Message):
     try:
         answer_text = await ask_ai(user_id, message.text)
         answer_text = remove_emojis(answer_text)
+        update_recent_phrases(user_id, answer_text)
         add_to_history(user_id, "user", message.text)
         add_to_history(user_id, "assistant", answer_text)
         await message.answer(answer_text)
