@@ -366,8 +366,21 @@ def build_messages(user_id: int, text: str, include_prefill: bool = True, use_ca
         messages.extend(FEW_SHOT_EXAMPLES)
 
     # Dynamic hint is placed after the cached prefix so it does not invalidate the cache.
+    hints = []
     if phrases_hint:
-        messages.append({"role": "system", "content": phrases_hint})
+        hints.append(phrases_hint)
+
+    # Последние ответы бота — чтобы не повторяться
+    last_bot_replies = [
+        m["content"] for m in chat_history.get(user_id, [])
+        if m["role"] == "assistant"
+    ][-3:]
+    if last_bot_replies:
+        joined = " | ".join(last_bot_replies)
+        hints.append(f"Твои последние ответы были: {joined}. НЕ повторяй эти же фразы и слова. Отвечай по-другому.")
+
+    if hints:
+        messages.append({"role": "system", "content": " ".join(hints)})
 
     messages.extend(history)
     wrapped = f"[СООБЩЕНИЕ ОТ ЗРИТЕЛЯ В ЧАТЕ]: {text}"
